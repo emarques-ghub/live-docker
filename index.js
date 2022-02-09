@@ -5,35 +5,46 @@ const express = require('express')
 const app = express()
 const port = 3000
 
-async function connect(){
-    if(global.connection && global.connection.state !== 'disconnected')
-        return global.connection;
+var mysql = require('mysql');
 
-    const mysql = require("mysql2/promise");
-    const connection = await mysql.createConnection({
-        host: "db",
-        user: "root",
-        password: "poam8343",
-        database: "Students"
-      });
-    console.log("Conectou no MySQL!");
-    global.connection = connection;
-    return connection;
-}
+var connection = mysql.createConnection({
+  host: "db",
+  user: "root",
+  password: "poam8343",
+  database: "Students"
+});
 
-async function selectCustomers(){
-    const conn = await connect();
-    const [rows] = await conn.query('SELECT * FROM Information;');
-    console.log(rows[1].firstname);
-    return rows;
-}
+connection.connect(function(err) {
+  if (err) {
+    console.error('error connecting: ' + err.stack);
+    return;
+  }
+
+ console.log('connected as id ' + connection.threadId);
+});
+
 
 app.get('/', (req, res) => {
-    const conn = connect();
     var text = 'Hello World! Eduardo';
     res.send(text);
   })
 
+app.get('/list', (req, res) => {
+  var text = '';
+  
+  connection.query('SELECT * FROM Information', function(err, rows, fields) 
+  {
+    if (err) throw err;
+    for (let index = 0; index < rows.length; index++) {
+      console.log(rows[index]);
+      text = text + " - " + rows[index].firstname;
+    }
+    res.send(text);
+  });
+
+  connection.end();
+
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
